@@ -33,3 +33,5 @@ Imports:
     anytime,
     RSQLite,
     stringr
+URL: https://github.com/zac-garland/zg.stock.scores
+BugReports: https://github.com/zac-garland/zg.stock.scores/issues
