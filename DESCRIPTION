@@ -35,6 +35,8 @@ Imports:
     RSQLite,
     stringr,
     rmarkdown,
-    shiny
+    shiny,
+    rmdformats,
+    knitr
 URL: https://github.com/zac-garland/zg.stock.scores
 BugReports: https://github.com/zac-garland/zg.stock.scores/issues
