@@ -31,6 +31,8 @@ jobs:
         run: |
           echo fmp_api_key="$fmp_api_key" >> ~/.Renviron
         shell: bash
+        env:
+          fmp_api_key: ${{ secrets.fmp_api_key}}
       - name: Render R Markdown
         run: Rscript -e 'rmarkdown::render(input = "index.Rmd", output_dir="docs")'
       - name: Commit results
