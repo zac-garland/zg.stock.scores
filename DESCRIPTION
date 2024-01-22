@@ -37,6 +37,7 @@ Imports:
     rmarkdown,
     shiny,
     rmdformats,
-    knitr
+    knitr,
+    devtools
 URL: https://github.com/zac-garland/zg.stock.scores
 BugReports: https://github.com/zac-garland/zg.stock.scores/issues
