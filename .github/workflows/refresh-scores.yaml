@@ -27,6 +27,10 @@ jobs:
           restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
       - name: Install dependencies
         run: Rscript -e 'remotes::install_deps()'
+      - name: Create and populate .Renviron
+        run: |
+          echo fmp_api_key="$fmp_api_key" >> ~/.Renviron
+          shell: bash
       - name: Render R Markdown
         run: Rscript -e 'rmarkdown::render(input = "index.Rmd", output_dir="docs")'
       - name: Commit results
