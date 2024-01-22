@@ -33,6 +33,8 @@ jobs:
         shell: bash
         env:
           fmp_api_key: ${{ secrets.fmp_api_key}}
+      - name: install dev repo
+        run: Rscript -e 'devtools::document();devtools::install(args = "--preclean --no-multiarch --with-keep.source")'
       - name: Render R Markdown
         run: Rscript -e 'rmarkdown::render(input = "index.Rmd", output_dir="docs")'
       - name: Commit results
