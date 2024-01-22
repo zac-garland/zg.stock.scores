@@ -1,0 +1,100 @@
+---
+title: "example automated dashboard"
+output:
+  rmdformats::downcute:
+  self_contained: false
+default_style: "dark"
+downcute_theme: "chaos"
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = FALSE,message = FALSE, warning = FALSE)
+
+```
+
+<h1 id="date-diff"></h1>
+
+```{r}
+library(shiny)
+devtools::load_all()
+```
+
+
+```{r}
+fill_qrs_table()
+
+```
+
+```{r}
+plot_alpha_historical_perf(get_complete_factor_list())
+```
+
+
+```{r}
+# R mixed with JS
+cur_date <- Sys.time();attr(cur_date,"tzone") <- "UTC"
+
+tags$script(shiny::HTML(glue::glue('
+$(function(){{
+  $("#date-diff").html("Last Updated " + get_time_diff("{cur_date}") + " ago");
+}});
+
+')))
+
+
+
+```
+
+
+
+## `DISCLAIMER: Information provided for educational purposes only. All views and calculations are my own.
+
+
+
+
+```{css}
+/*fix for 0 padding*/
+  .col-1-2, .col-6-12 {
+    padding: 0.5%;
+  }
+```
+
+
+```{js}
+
+// add in last updated date
+function get_time_diff( datetime ){
+  var datetime = new Date(datetime.replace(" ", "T") + "Z").getTime();;
+  var now = new Date().getTime();
+  var milisec_diff = now - datetime;
+  var msec = milisec_diff;
+  var hh = Math.floor(msec / 1000 / 60 / 60);
+  msec -= hh * 1000 * 60 * 60;
+  var mm = Math.floor(msec / 1000 / 60);
+  msec -= mm * 1000 * 60;
+  var ss = Math.floor(msec / 1000);
+  msec -= ss * 1000;
+  return hh + " Hours " + mm + " Minutes " + ss + " Seconds";
+}
+
+
+// resize highcharts to fit in main cotent area
+
+document.addEventListener("DOMContentLoaded", function() {
+
+  $(".highchart, .highcharts-container, .highcharts-root").css("max-width","100%");
+
+  var t = setInterval(function(){
+    var resizeEvent = new Event('resize');
+    window.dispatchEvent(resizeEvent);
+  }, 1000);
+
+
+});
+
+
+
+```

@@ -1,14 +1,14 @@
 
-get_qrs_data <- function(ticker, return_sql_connect = FALSE,debug = FALSE) {
-  mod_full_join <- function(lhs,rhs,...){
-    if(nrow(rhs)>0){
-      dplyr::full_join(lhs,rhs,...)
-    }else{
+get_qrs_data <- function(ticker, return_sql_connect = FALSE, debug = FALSE) {
+  mod_full_join <- function(lhs, rhs, ...) {
+    if (nrow(rhs) > 0) {
+      dplyr::full_join(lhs, rhs, ...)
+    } else {
       lhs
     }
   }
 
-  ticker_price <- fmpr::fmp_historical_price(ticker = ticker,start_date = lubridate::as_date("1900-01-01")) %>%
+  ticker_price <- fmpr::fmp_historical_price(ticker = ticker, start_date = lubridate::as_date("1900-01-01")) %>%
     dplyr::mutate(symbol = ticker)
   market_data <- get_market_data() %>% dplyr::select(date, market_close = adj_close)
   analyst_est <- fmpr::fmp_analyst_estimates(ticker, "annual") %>% dplyr::mutate(symbol = ticker)
@@ -19,10 +19,10 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE,debug = FALSE) {
   balance_sheet <- fmpr::fmp_balance_sheet(ticker = ticker) %>% dplyr::mutate(symbol = ticker)
   q_ratios <- fmpr::fmp_ratios(ticker = ticker) %>% dplyr::mutate(symbol = ticker)
 
-  safe_get_employ <- purrr::safely(fmp_historical_employment,otherwise = dplyr::tibble())
+  safe_get_employ <- purrr::safely(fmp_historical_employment, otherwise = dplyr::tibble())
 
   employment <- safe_get_employ(ticker = ticker)$result
-  if(nrow(employment)>0){
+  if (nrow(employment) > 0) {
     employment <- employment %>%
       dplyr::mutate(symbol = ticker) %>%
       dplyr::select(symbol, date = filing_date, employee_count)
@@ -90,7 +90,7 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE,debug = FALSE) {
 
   # fundamental factors -----------------------------------------------------
 
-  if(nrow(analyst_est)>0){
+  if (nrow(analyst_est) > 0) {
     analyst_estimates <- analyst_est %>%
       dplyr::select(symbol, date, estimated_eps_avg, estimated_revenue_avg) %>%
       dplyr::mutate(
@@ -100,9 +100,9 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE,debug = FALSE) {
       dplyr::mutate(
         long_term_growth = roll::roll_mean(estimated_eps_avg / dplyr::lag(estimated_eps_avg, 1) - 1, 5),
         long_term_sales_growth = roll::roll_mean(estimated_revenue_avg / dplyr::lag(estimated_revenue_avg, 1) - 1, 5)
-      )%>%
+      ) %>%
       dplyr::select(symbol, date, fy1_eps, fy2_eps, long_term_growth, long_term_sales_growth)
-  }else{
+  } else {
     analyst_estimates <- analyst_est
   }
 
@@ -116,19 +116,19 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE,debug = FALSE) {
 
   key_measures <- key_metrics %>%
     dplyr::select(symbol, date,
-           book_value_per_share,
-           tangible_book_value_per_share,
-           operating_cash_flow_per_share,
-           free_cash_flow_per_share,
-           revenue_per_share,
-           roe,
-           roic,
-           roa = return_on_tangible_assets,
-           current_ratio,
-           dividend_yield,
-           debt_to_equity,
-           receivables_turnover,
-           net_income_per_share
+      book_value_per_share,
+      tangible_book_value_per_share,
+      operating_cash_flow_per_share,
+      free_cash_flow_per_share,
+      revenue_per_share,
+      roe,
+      roic,
+      roa = return_on_tangible_assets,
+      current_ratio,
+      dividend_yield,
+      debt_to_equity,
+      receivables_turnover,
+      net_income_per_share
     ) %>%
     dplyr::mutate(
       cash_flow_var = roll::roll_median(
@@ -147,15 +147,15 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE,debug = FALSE) {
 
   cash_measures <- cash_statement %>%
     dplyr::select(date, capital_expenditure, operating_cash_flow,
-           cash_from_invest = net_cash_used_for_investing_activites,
-           free_cash_flow
+      cash_from_invest = net_cash_used_for_investing_activites,
+      free_cash_flow
     ) %>%
     dplyr::left_join(
       balance_sheet %>%
         dplyr::mutate(
           invested_capital = short_term_debt + long_term_debt + capital_lease_obligations + total_equity + cash_and_short_term_investments
         ) %>%
-        dplyr::select(date,symbol, total_assets, total_current_assets, total_current_liabilities, total_stockholders_equity, total_equity, total_debt, net_debt, invested_capital) %>%
+        dplyr::select(date, symbol, total_assets, total_current_assets, total_current_liabilities, total_stockholders_equity, total_equity, total_debt, net_debt, invested_capital) %>%
         dplyr::mutate(total_capital = total_current_assets - total_current_liabilities)
     ) %>%
     dplyr::mutate(
@@ -201,38 +201,42 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE,debug = FALSE) {
     tidyr::fill(where(function(x) is.numeric(x)) & !matches("adj_close")) %>%
     dplyr::filter(!is.na(adj_close)) %>%
     dplyr::mutate(
-      dplyr::across(dplyr::any_of(c(
-        "fy1_eps", "fy2_eps", "eps", "book_value_per_share", "tangible_book_value_per_share",
-        "operating_cash_flow_per_share", "free_cash_flow_per_share", "revenue_per_share"
-      )),
-      list(yield = ~ . / adj_close))
+      dplyr::across(
+        dplyr::any_of(c(
+          "fy1_eps", "fy2_eps", "eps", "book_value_per_share", "tangible_book_value_per_share",
+          "operating_cash_flow_per_share", "free_cash_flow_per_share", "revenue_per_share"
+        )),
+        list(yield = ~ . / adj_close)
+      )
     ) %>%
     dplyr::mutate(equity_turnover = revenue / total_stockholders_equity) %>%
     dplyr::mutate(cf_per_employee = free_cash_flow / employee_count)
 
   # qrs_out
 
-  cols_out <- c("date", "symbol", "one_year_vol", "lt_st_mom", "lt_st_rsi",
-                "ulcer_index", "up_minus_down_beta", "eps_yield", "fy1_eps_yield",
-                "fy2_eps_yield", "dividend_yield", "book_value_per_share_yield",
-                "tangible_book_value_per_share_yield", "operating_cash_flow_per_share_yield",
-                "free_cash_flow_per_share_yield", "revenue_per_share_yield",
-                "roe", "roa", "roic", "gross_profit_margin", "operating_profit_margin",
-                "net_profit_margin", "current_ratio", "quick_ratio", "cash_flow_coverage",
-                "capex_to_assets", "debt_to_capital", "debt_to_equity", "financial_leverage",
-                "cfi_to_invest_cap", "long_term_growth", "long_term_sales_growth",
-                "net_income_var", "cash_flow_var", "asset_turnover", "equity_turnover",
-                "receivables_turnover", "cf_per_employee")
+  cols_out <- c(
+    "date", "symbol", "one_year_vol", "lt_st_mom", "lt_st_rsi",
+    "ulcer_index", "up_minus_down_beta", "eps_yield", "fy1_eps_yield",
+    "fy2_eps_yield", "dividend_yield", "book_value_per_share_yield",
+    "tangible_book_value_per_share_yield", "operating_cash_flow_per_share_yield",
+    "free_cash_flow_per_share_yield", "revenue_per_share_yield",
+    "roe", "roa", "roic", "gross_profit_margin", "operating_profit_margin",
+    "net_profit_margin", "current_ratio", "quick_ratio", "cash_flow_coverage",
+    "capex_to_assets", "debt_to_capital", "debt_to_equity", "financial_leverage",
+    "cfi_to_invest_cap", "long_term_growth", "long_term_sales_growth",
+    "net_income_var", "cash_flow_var", "asset_turnover", "equity_turnover",
+    "receivables_turnover", "cf_per_employee"
+  )
 
-  for(i in seq_along(cols_out)){
-    if(!cols_out[i] %in% names(qrs_out)){
+  for (i in seq_along(cols_out)) {
+    if (!cols_out[i] %in% names(qrs_out)) {
       qrs_out[cols_out[i]] <- NA
     }
   }
 
   qrs_out %>%
     dplyr::select(
-      date, symbol,adj_close,
+      date, symbol, adj_close,
       # market_intercept,
       # market_slope,
       # market_residual_momentum,
@@ -283,47 +287,47 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE,debug = FALSE) {
       efficiency_equity_turnover = equity_turnover,
       efficiency_receivables_turnover = receivables_turnover,
       efficiency_cash_flow_employee = cf_per_employee
-    ) %>% tibble::add_column(
+    ) %>%
+    tibble::add_column(
       retrieved_date = Sys.time(), .before = 1
     ) %>%
     tibble::add_column(
       retrieved_sys_date = Sys.Date(), .before = 1
     ) %>%
     dplyr::mutate(month_date = lubridate::ceiling_date(date, "month")) %>%
-    dplyr::select(retrieved_sys_date,retrieved_date,month_date,date,symbol,everything()) %>%
+    dplyr::select(retrieved_sys_date, retrieved_date, month_date, date, symbol, dplyr::everything()) %>%
     dplyr::group_by(month_date) %>%
-    dplyr::filter(date == max(date,na.rm=TRUE)) %>%
+    dplyr::filter(date == max(date, na.rm = TRUE)) %>%
     dplyr::select(-date) %>%
     dplyr::rename(date = month_date) %>%
     dplyr::ungroup() -> out_res
 
-  if(debug){
+  if (debug) {
     return(out_res)
   }
 
   if (nrow(out_res) > 0) {
     mydb <- connect_quant()
-    on.exit(dbDisconnect(mydb),add = TRUE)
+    on.exit(DBI::dbDisconnect(mydb), add = TRUE)
     out_res <- out_res %>%
       dplyr::mutate_at(dplyr::vars(dplyr::contains("date")), dplyr::funs(as.character)) %>%
       dplyr::mutate(retrieved_date = anytime::anytime(retrieved_date) %>% as.double())
-    if (!("qrs_data" %in% dbListTables(mydb))) {
-      dbWriteTable(mydb, "qrs_data", out_res)
+    if (!("qrs_data" %in% DBI::dbListTables(mydb))) {
+      DBI::dbWriteTable(mydb, "qrs_data", out_res)
     } else {
-      dbAppendTable(mydb, "qrs_data", out_res)
+      DBI::dbAppendTable(mydb, "qrs_data", out_res)
     }
   }
 
   if (return_sql_connect) {
     dplyr::tbl(mydb, "qrs_data")
   } else {
-    dbDisconnect(mydb)
+    DBI::dbDisconnect(mydb)
   }
 }
 
 
-fill_qrs_table <- function(test = FALSE){
-
+fill_qrs_table <- function(test = FALSE,quiet = TRUE) {
   library(furrr)
   sp50 <- fmpr::fmp_sp500_constituents()
   # filt_ticks <- quant_table() %>%
@@ -333,20 +337,23 @@ fill_qrs_table <- function(test = FALSE){
   #   dplyr::pull(symbol)
 
 
-  if(nrow(sp50)>0){
+  if (nrow(sp50) > 0) {
     mydb <- connect_quant()
     sp50 <- sp50 %>%
       tibble::add_column(
-        retrieved_date = Sys.time(),.before = 1) %>% tibble::add_column(
-          retrieved_sys_date = Sys.Date(),.before = 1
-        ) %>% dplyr::mutate_at(dplyr::vars(dplyr::contains("date")),funs(as.character)) %>%
+        retrieved_date = Sys.time(), .before = 1
+      ) %>%
+      tibble::add_column(
+        retrieved_sys_date = Sys.Date(), .before = 1
+      ) %>%
+      dplyr::mutate_at(dplyr::vars(dplyr::contains("date")), dplyr::funs(as.character)) %>%
       dplyr::mutate(retrieved_date = anytime::anytime(retrieved_date) %>% as.double())
 
 
-    if(!("quant_qrs_meta" %in% dbListTables(mydb))){
-      dbWriteTable(mydb,"quant_qrs_meta",sp50)
-    }else{
-      dbAppendTable(mydb,"quant_qrs_meta",sp50)
+    if (!("quant_qrs_meta" %in% DBI::dbListTables(mydb))) {
+      DBI::dbWriteTable(mydb, "quant_qrs_meta", sp50)
+    } else {
+      DBI::dbAppendTable(mydb, "quant_qrs_meta", sp50)
     }
 
 
@@ -358,23 +365,24 @@ fill_qrs_table <- function(test = FALSE){
       # dplyr::ungroup() %>%
       dplyr::pull(symbol) -> sp50_ticks
 
-    if(test){
-      sp50_ticks <- sample(sp50_ticks,3)
+    if (test) {
+      sp50_ticks <- sample(sp50_ticks, 3)
     }
 
 
-    plan(multicore)
+    future::plan(multisession)
 
 
 
-    future_walk(sp50_ticks,~{
+    furrr::future_map(sp50_ticks, ~ {
       get_qrs_data_safe <- purrr::safely(get_qrs_data)
       # message(glue::glue("retrieving {.x}"))
       # get_qrs_data(.x)
-      suppressMessages(get_qrs_data_safe(.x)) %>% invisible()
+      if(quiet){
+        suppressMessages(get_qrs_data_safe(.x)) %>% invisible()
+      }else{
+        get_qrs_data_safe(.x)
+      }
     })
   }
-
-
-
 }

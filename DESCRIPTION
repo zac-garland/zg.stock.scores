@@ -13,7 +13,9 @@ RoxygenNote: 7.1.2
 Remotes: 
     zac-garland/fmpr
 Depends: 
-    fmpr (>= 0.0.0.9000)
+    fmpr (>= 0.0.0.9000),
+    tidyquant,
+    zoo
 Imports: 
     lubridate,
     dplyr,
@@ -27,11 +29,12 @@ Imports:
     glue,
     usethis,
     here,
-    tidyquant,
     timetk,
     tibble,
     anytime,
     RSQLite,
-    stringr
+    stringr,
+    rmarkdown,
+    shiny
 URL: https://github.com/zac-garland/zg.stock.scores
 BugReports: https://github.com/zac-garland/zg.stock.scores/issues
