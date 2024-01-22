@@ -30,7 +30,7 @@ jobs:
       - name: Create and populate .Renviron
         run: |
           echo fmp_api_key="$fmp_api_key" >> ~/.Renviron
-          shell: bash
+        shell: bash
       - name: Render R Markdown
         run: Rscript -e 'rmarkdown::render(input = "index.Rmd", output_dir="docs")'
       - name: Commit results
