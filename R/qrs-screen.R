@@ -376,8 +376,7 @@ fill_qrs_table <- function(test = FALSE, quiet = TRUE) {
     future::plan(multisession)
 
 
-
-    furrr::future_map(sp50_ticks, ~ {
+    furrr::future_imap(setNames(sp50_ticks,sp50_ticks), ~ {
       get_qrs_data_safe <- purrr::safely(get_qrs_data)
       # message(glue::glue("retrieving {.x}"))
       # get_qrs_data(.x)
