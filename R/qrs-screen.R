@@ -209,10 +209,15 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE, debug = FALSE) {
         list(yield = ~ . / adj_close)
       )
     ) %>%
-    dplyr::mutate(equity_turnover = revenue / total_stockholders_equity) %>%
-    dplyr::mutate(cf_per_employee = free_cash_flow / employee_count)
+    dplyr::mutate(equity_turnover = revenue / total_stockholders_equity)
 
-  # qrs_out
+  if("employee_count" %in% names(qrs_out)){
+    qrs_out <- qrs_out %>%
+      dplyr::mutate(cf_per_employee = free_cash_flow / employee_count)
+  }else{
+    qrs_out <- qrs_out %>% dplyr::mutate(cf_per_employee = NA_real_)
+  }
+
 
   cols_out <- c(
     "date", "symbol", "one_year_vol", "lt_st_mom", "lt_st_rsi",
