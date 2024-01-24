@@ -6,7 +6,7 @@ quant_table <- function(con = connect_quant()) {
   dplyr::tbl(con, "qrs_data") %>%
     dplyr::group_by(retrieved_sys_date, symbol) %>%
     dplyr::filter(retrieved_date == max(retrieved_date, na.rm = TRUE)) %>%
-    dplyr::select(-ends_with(".y"), -calendar_year.x) %>%
+    dplyr::select(-ends_with(".y")) %>%
     dplyr::rename_at(dplyr::vars(dplyr::ends_with(".x")), dplyr::funs(stringr::str_remove(., ".x")))
 }
 

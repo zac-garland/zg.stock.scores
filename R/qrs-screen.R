@@ -315,6 +315,8 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE, debug = FALSE) {
     if (!("qrs_data" %in% DBI::dbListTables(mydb))) {
       DBI::dbWriteTable(mydb, "qrs_data", out_res)
     } else {
+      DBI::dbExecute(mydb, as.character(glue::glue("DELETE FROM qrs_data WHERE (symbol = '{ticker}')")))
+
       DBI::dbAppendTable(mydb, "qrs_data", out_res)
     }
   }
@@ -327,7 +329,7 @@ get_qrs_data <- function(ticker, return_sql_connect = FALSE, debug = FALSE) {
 }
 
 
-fill_qrs_table <- function(test = FALSE,quiet = TRUE) {
+fill_qrs_table <- function(test = FALSE, quiet = TRUE) {
   library(furrr)
   sp50 <- fmpr::fmp_sp500_constituents()
   # filt_ticks <- quant_table() %>%
@@ -339,6 +341,7 @@ fill_qrs_table <- function(test = FALSE,quiet = TRUE) {
 
   if (nrow(sp50) > 0) {
     mydb <- connect_quant()
+    on.exit(DBI::dbDisconnect(mydb),add = TRUE)
     sp50 <- sp50 %>%
       tibble::add_column(
         retrieved_date = Sys.time(), .before = 1
@@ -378,9 +381,9 @@ fill_qrs_table <- function(test = FALSE,quiet = TRUE) {
       get_qrs_data_safe <- purrr::safely(get_qrs_data)
       # message(glue::glue("retrieving {.x}"))
       # get_qrs_data(.x)
-      if(quiet){
+      if (quiet) {
         suppressMessages(get_qrs_data_safe(.x)) %>% invisible()
-      }else{
+      } else {
         get_qrs_data_safe(.x)
       }
     })
