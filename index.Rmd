@@ -24,7 +24,7 @@ devtools::load_all()
 
 
 ```{r}
-fill_qrs_table()
+fill_qrs_table(test = TRUE)
 
 ```
 
