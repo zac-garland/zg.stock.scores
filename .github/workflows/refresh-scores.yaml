@@ -3,7 +3,7 @@ on:
     - cron:  '00 10,22 * * *'
   push:
     branches: master
-
+    
 name: Refresh stock scores
 
 jobs:
