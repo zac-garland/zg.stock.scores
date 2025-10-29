@@ -36,7 +36,7 @@ jobs:
       - name: install dev repo
         run: Rscript -e 'devtools::document();devtools::install(args = "--preclean --no-multiarch --with-keep.source")'
       - name: test write
-        run: Rscript -e 'readr::write_lines("updating","update.txt")'
+        run: Rscript -e 'readr::write_lines(paste("updating",Sys.time(),collapse = "\n"),"update.txt")'
       - name: Commit results
         run: |
           git add -A
